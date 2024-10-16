@@ -1,0 +1,15 @@
+{
+  "name": "to-do-api",
+  "version": "1.0.0",
+  "description": "a RESTful API for managing a to-do list using Node.js and Express.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}
