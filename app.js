@@ -10,8 +10,37 @@ app.use(express.json());
 let tasks=[];
 let nextId = 1; //To assign unique Id to tasks
 
+//hardcoded username and password for simplicity
+const USERNAME = 'admin';
+const PASSWORD = 'password';
+
+//Middleware to implement Basic AUthentication
+const basicAuth = (req, res, next)=> {
+    const authHeader = req.headers['authorization'];
+
+    if(!authHeader){
+        //if no AUthorisation header is present, return 401
+        return res.status(401).json({error: 'Authorization header is required'}
+         
+        )
+    }
+
+    //The format of the authorization header shuld be 'Basic
+    const base64Credentials = authHeader.split('')[1];
+    const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+    const [username, password] = credentials.split(':');
+
+    // Check if the provided username and password match the hardcoded values
+    if (username === USERNAME && password === PASSWORD) {
+        next(); // Authentication successful, proceed to the next middleware
+    } else {
+        // If authentication fails, return 401 Unauthorized
+        return res.status(401).json({ error: 'Invalid credentials' });
+    }
+};
+
 //Create a new task
-app.post('/tasks', (req,res)=>{
+app.post('/tasks',basicAuth, (req,res)=>{
     const {task} = req.body;
     if(!task || typeof task !== 'string' || task.trim()==='')
     {
@@ -25,13 +54,29 @@ app.post('/tasks', (req,res)=>{
     res.status(201).json(newTask);
 })
 
-//Get all tasks
+//Get all tasks with pagination
 app.get('/tasks', (req,res)=>{
-    res.json(tasks);
+    const {offset =0, limt=10}= req.query;
+
+    //Convert query parametrs to integers
+    const offsetInt = parseInt(offset, 10);
+    const limitInt= parseInt(limit, 10);
+
+    //Validate offset and limit
+    if(isNaN(offsetInt)|| offsetInt < 0){
+        return res.status(400).json({error: 'Offset must be ..'})
+    }
+    if(isNaN(limitInt)|| limitInt <= 0){
+        return res.status(400).json({error:'Limit must be a posi....'})
+    }
+
+    //Slice teh tasks array for pagination
+    const paginatedTasks = tasks.slice(offsetInt, offsetInt + limitInt)
+    res.json(paginatedTasks);
 });
 
 //Update a task
-app.put('/tasks/:id', (req,res)=> {
+app.put('/tasks/:id', basicAuth, (req,res)=> {
     const taskId = parseInt(req.params.id, 10);
     const {task}= req.body;
 
@@ -52,7 +97,7 @@ app.put('/tasks/:id', (req,res)=> {
 }) 
 
 //Delete a task
-app.delete('/tasks/:id', (req,res)=> {
+app.delete('/tasks/:id',basicAuth, (req,res)=> {
     const taskId = parseInt(req.params.id, 10);
     const index= tasks.findIndex(t => t.id === taskId);
     if(index === -1){
